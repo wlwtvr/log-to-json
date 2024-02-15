@@ -1,6 +1,8 @@
 # Log to JSON
 
-this command turn log text into json. example:
+this command turn log text into json.
+
+## Example
 input:
 ```
 name:"Fikar" age:10 address:{city:"Jakarta Selatan" state:"DKI Jakarta"} gender:"male"
