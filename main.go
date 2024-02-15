@@ -12,7 +12,7 @@ import (
 // Function to parse text to JSON
 func parseTextToJSON(text string) map[string]interface{} {
 	// Regular expression pattern to match field names and values
-	pattern := `(\w+):("[^"]+"|\w+)`
+	pattern := `(\w+):(".*?"|\{.*?\})`
 	re := regexp.MustCompile(pattern)
 	matches := re.FindAllStringSubmatch(text, -1)
 
@@ -31,13 +31,43 @@ func parseTextToJSON(text string) map[string]interface{} {
 		// Check if fieldValue represents a nested object
 		if strings.HasPrefix(fieldValue, "{") && strings.HasSuffix(fieldValue, "}") {
 			// Parse nested object recursively
-			parsedData[fieldName] = parseTextToJSON(fieldValue)
+			parsedData[fieldName] = parseNestedObject(fieldValue[1 : len(fieldValue)-1])
 		} else {
 			parsedData[fieldName] = fieldValue
 		}
 	}
 
 	return parsedData
+}
+
+// Function to parse nested object
+func parseNestedObject(text string) map[string]interface{} {
+	nestedData := make(map[string]interface{})
+
+	// Regular expression pattern to match nested field names and values
+	pattern := `(\w+):(".*?"|\{.*?\})`
+	re := regexp.MustCompile(pattern)
+	matches := re.FindAllStringSubmatch(text, -1)
+
+	for _, match := range matches {
+		fieldName := match[1]
+		fieldValue := match[2]
+
+		// Remove quotes if value is a string
+		if strings.HasPrefix(fieldValue, `"`) && strings.HasSuffix(fieldValue, `"`) {
+			fieldValue = fieldValue[1 : len(fieldValue)-1]
+		}
+
+		// Check if fieldValue represents a nested object
+		if strings.HasPrefix(fieldValue, "{") && strings.HasSuffix(fieldValue, "}") {
+			// Parse nested object recursively
+			nestedData[fieldName] = parseNestedObject(fieldValue[1 : len(fieldValue)-1])
+		} else {
+			nestedData[fieldName] = fieldValue
+		}
+	}
+
+	return nestedData
 }
 
 func main() {
