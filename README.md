@@ -14,6 +14,7 @@ output:
     "city": "Jakarta Selatan",
     "state": "DKI Jakarta"
   },
+  "age": 10,
   "gender": "male",
   "name": "Fikar"
 }
