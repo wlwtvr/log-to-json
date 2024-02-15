@@ -3,16 +3,17 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
 // Function to parse text to JSON
-func parseTextToJSON(text string) map[string]interface{} {
+func parseTextToJSON(text string) (map[string]interface{}, error) {
 	// Regular expression pattern to match field names and values
-	pattern := `(\w+):(".*?"|\{.*?\})`
+	pattern := `(\w+):(".*?"|\{.*?\}|\w+)`
 	re := regexp.MustCompile(pattern)
 	matches := re.FindAllStringSubmatch(text, -1)
 
@@ -31,43 +32,43 @@ func parseTextToJSON(text string) map[string]interface{} {
 		// Check if fieldValue represents a nested object
 		if strings.HasPrefix(fieldValue, "{") && strings.HasSuffix(fieldValue, "}") {
 			// Parse nested object recursively
-			parsedData[fieldName] = parseNestedObject(fieldValue[1 : len(fieldValue)-1])
+			nestedObject, err := parseTextToJSON(fieldValue[1 : len(fieldValue)-1])
+			if err != nil {
+				return nil, err
+			}
+			parsedData[fieldName] = nestedObject
 		} else {
-			parsedData[fieldName] = fieldValue
+			// Parse field value based on its type
+			value, err := parseValue(fieldValue)
+			if err != nil {
+				return nil, err
+			}
+			parsedData[fieldName] = value
 		}
 	}
 
-	return parsedData
+	return parsedData, nil
 }
 
-// Function to parse nested object
-func parseNestedObject(text string) map[string]interface{} {
-	nestedData := make(map[string]interface{})
-
-	// Regular expression pattern to match nested field names and values
-	pattern := `(\w+):(".*?"|\{.*?\})`
-	re := regexp.MustCompile(pattern)
-	matches := re.FindAllStringSubmatch(text, -1)
-
-	for _, match := range matches {
-		fieldName := match[1]
-		fieldValue := match[2]
-
-		// Remove quotes if value is a string
-		if strings.HasPrefix(fieldValue, `"`) && strings.HasSuffix(fieldValue, `"`) {
-			fieldValue = fieldValue[1 : len(fieldValue)-1]
-		}
-
-		// Check if fieldValue represents a nested object
-		if strings.HasPrefix(fieldValue, "{") && strings.HasSuffix(fieldValue, "}") {
-			// Parse nested object recursively
-			nestedData[fieldName] = parseNestedObject(fieldValue[1 : len(fieldValue)-1])
-		} else {
-			nestedData[fieldName] = fieldValue
-		}
+// Function to parse field value based on its type
+func parseValue(value string) (interface{}, error) {
+	// Try to parse as integer
+	if intValue, err := strconv.Atoi(value); err == nil {
+		return intValue, nil
 	}
 
-	return nestedData
+	// Try to parse as float
+	if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+		return floatValue, nil
+	}
+
+	// Try to parse as boolean
+	if boolValue, err := strconv.ParseBool(value); err == nil {
+		return boolValue, nil
+	}
+
+	// If not an integer, float, or boolean, treat as string
+	return value, nil
 }
 
 func main() {
@@ -77,7 +78,7 @@ func main() {
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		// Data is being piped, read from stdin
-		bytes, err := ioutil.ReadAll(os.Stdin)
+		bytes, err := io.ReadAll(os.Stdin)
 		if err != nil {
 			fmt.Println("Error reading from stdin:", err)
 			return
@@ -93,7 +94,11 @@ func main() {
 	}
 
 	// Parse text to JSON
-	parsedJSON := parseTextToJSON(inputText)
+	parsedJSON, err := parseTextToJSON(inputText)
+	if err != nil {
+		fmt.Println("Error parsing text:", err)
+		return
+	}
 
 	// Convert parsed data to JSON string
 	jsonStr, err := json.MarshalIndent(parsedJSON, "", "  ")
