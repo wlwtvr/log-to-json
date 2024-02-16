@@ -80,6 +80,17 @@ func TestParseTextToJSON(t *testing.T) {
 			},
 			expectedError: nil,
 		},
+		{
+			name:  "Test identical field name inside nested object",
+			input: `display_data:{name:"Samantha"} name:"Agus"`,
+			expectedOutput: map[string]interface{}{
+				"name": "Agus",
+				"display_data": map[string]interface{}{
+					"name": "Samantha",
+				},
+			},
+			expectedError: nil,
+		},
 	}
 
 	for _, test := range tests {
