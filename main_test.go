@@ -25,13 +25,21 @@ func TestParseTextToJSON(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name:  "Test scientific notation number",
+			name:  "Test scientific positive notation number",
 			input: `name:"John" age:30 salary:2e+06 married:true`,
 			expectedOutput: map[string]interface{}{
 				"name":    "John",
 				"age":     30,
-				"salary":  2000000.0,
+				"salary":  "2e+06",
 				"married": true,
+			},
+			expectedError: nil,
+		},
+		{
+			name:  "Test scientific negative notation number",
+			input: `atom_size:"1e-23"`,
+			expectedOutput: map[string]interface{}{
+				"atom_size": "1e-23",
 			},
 			expectedError: nil,
 		},
@@ -61,6 +69,14 @@ func TestParseTextToJSON(t *testing.T) {
 						"title":  "title_2",
 					},
 				},
+			},
+			expectedError: nil,
+		},
+		{
+			name:  "Test floating number (dot)",
+			input: `number:35.30`,
+			expectedOutput: map[string]interface{}{
+				"number": 35.30,
 			},
 			expectedError: nil,
 		},

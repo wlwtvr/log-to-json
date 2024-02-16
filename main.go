@@ -65,14 +65,16 @@ func parseValue(value string) (interface{}, error) {
 		return value[1 : len(value)-1], nil
 	}
 
+	// Try to parse floating/decimal number
+	if strings.Contains(value, ".") {
+		if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+			return floatValue, nil
+		}
+	}
+
 	// Try to parse as integer
 	if intValue, err := strconv.Atoi(value); err == nil {
 		return intValue, nil
-	}
-
-	// Try to parse as float
-	if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
-		return floatValue, nil
 	}
 
 	// Try to parse as boolean
@@ -81,14 +83,20 @@ func parseValue(value string) (interface{}, error) {
 	}
 
 	// Handle scientific notation numbers
-	if strings.Contains(value, "e") || strings.Contains(value, "E") {
-		if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
-			return floatValue, nil
-		}
+	if isScientificNotation(value) {
+		return value, nil
 	}
 
 	// If not an integer, float, or boolean, treat as string
 	return value, nil
+}
+
+// isScientificNotation checks if the given string represents a number in scientific notation.
+func isScientificNotation(s string) bool {
+	// Regular expression pattern to match scientific notation
+	pattern := `[eE][-+]?\d+`
+	re := regexp.MustCompile(pattern)
+	return re.MatchString(s)
 }
 
 func main() {
