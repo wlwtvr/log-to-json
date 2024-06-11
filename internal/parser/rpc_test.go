@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"reflect"
@@ -95,7 +95,7 @@ func TestParseTextToJSON(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			output, err := parseTextToJSON(test.input)
+			output, err := ParseTextToJSON(test.input)
 			if err != test.expectedError {
 				t.Errorf("Expected error: %v, got: %v", test.expectedError, err)
 				return
