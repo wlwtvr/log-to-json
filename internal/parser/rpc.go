@@ -1,18 +1,14 @@
-package main
+package parser
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-// parseTextToJSON parses the given text and converts it into a JSON-like map.
+// ParseTextToJSON parses the given text and converts it into a JSON-like map.
 // It uses a regular expression to match field names and values.
-func parseTextToJSON(text string) (map[string]interface{}, error) {
+func ParseTextToJSON(text string) (map[string]interface{}, error) {
 	// Regular expression pattern to match field names and values
 	pattern := `(\w+):(".*?"|\{.*?\}|[\w+eE.-]+|true|false)`
 	re := regexp.MustCompile(pattern)
@@ -37,7 +33,7 @@ func parseTextToJSON(text string) (map[string]interface{}, error) {
 // If the field value represents a nested object, it recursively calls parseTextToJSON to parse it.
 func parseFieldValue(fieldValue string) (interface{}, error) {
 	if strings.HasPrefix(fieldValue, "{") && strings.HasSuffix(fieldValue, "}") {
-		return parseTextToJSON(fieldValue[1 : len(fieldValue)-1])
+		return ParseTextToJSON(fieldValue[1 : len(fieldValue)-1])
 	}
 	return parseValue(fieldValue)
 }
@@ -97,44 +93,4 @@ func isScientificNotation(s string) bool {
 	pattern := `[eE][-+]?\d+`
 	re := regexp.MustCompile(pattern)
 	return re.MatchString(s)
-}
-
-func main() {
-	var inputText string
-
-	// Check if input is being piped
-	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		// Data is being piped, read from stdin
-		bytes, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			fmt.Println("Error reading from stdin:", err)
-			return
-		}
-		inputText = string(bytes)
-	} else {
-		// No piped input, read from command line argument
-		if len(os.Args) < 2 {
-			fmt.Println("Usage: cli_command <text>")
-			return
-		}
-		inputText = os.Args[1]
-	}
-
-	// Parse text to JSON
-	parsedJSON, err := parseTextToJSON(inputText)
-	if err != nil {
-		fmt.Println("Error parsing text:", err)
-		return
-	}
-
-	// Convert parsed data to JSON string
-	jsonStr, err := json.MarshalIndent(parsedJSON, "", "  ")
-	if err != nil {
-		fmt.Println("Error marshalling JSON:", err)
-		return
-	}
-
-	// Print the parsed JSON
-	fmt.Println(string(jsonStr))
 }
