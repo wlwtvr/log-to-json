@@ -9,8 +9,8 @@ test:
 clean:
 	rm -f log2json
 
-# run-web:
-# 	go run cmd/web/main.go
+run-http:
+	go run cmd/http/main.go
 
 run-cli:
 	go run cmd/cli/main.go
